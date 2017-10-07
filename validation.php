@@ -1,38 +1,34 @@
 <?php
- 
-require_once '/../vendor/autoload.php';
-include_once('../../login.php');
-use \Firebase\JWT\JWT;
- 
+
+    use \Firebase\JWT\JWT;
+    require_once('JWT.php');
+    
+    require_once 'vendor/autoload.php';
+    
 class userAuth {
     private $id;
     private $email;
     private $key = "secretSignKey";
-/*
-    private $user = array(
-        "email" => 'ju',
-        "password" => 'ju'
-    );
-*/
 
-
-
-
-     
     // Checks if the user exists in the database
     private function validUser($email, $password) {
-    // doing a user exists check with minimal to no validation on user input
+        $connection = new PDO("mysql:host=localhost;dbname=macroeat",'justine','admin');
 
-      /*  if ($email == $this->user['email'] && $password == $this->user['password']) {
-            // Add user email and id to empty email and id variable and return true
-            $this->id = $this->user['id'];
-            
-            $this->email = $this->user['email'];
+        $username = $_GET['username'];
+        $password = $_GET['password'];
+
+        $sql = $connection->query("SELECT username, password FROM login WHERE username = '$username' && `password`= '$password';");
+        while ($result = $sql->fetch()){
+            $data = array('username' => $result['username'],
+                          'password' => $result['password']);
+        }
+
+        if($data['username'] == $username && $data['password'] == $password){
             return true;
-        } 
-        else {    
+        }
+        else{
             return false;
-        }*/
+        }
     }
 
     // Generates and signs a JWT for User
@@ -42,8 +38,6 @@ class userAuth {
             "email" => $this->email,
             "exp" => time() + (60 * 60)
         );
-    
-        // encode the payload using our secretkey and return the token
         return JWT::encode($payload, $this->key);
     }
 
@@ -51,23 +45,11 @@ class userAuth {
     public function mailUser($email, $password) {
         // check if the user exists
         if ($this->validUser($email, $password)) {
-                // generate JSON web token and store as variable
                 $token = $this->genJWT();
-                // create email
-                $message = 'http://ghostffco.de/index.php?token='.$token;
-                
-                
-                // if the email is successful, send feedback to user
-                if ($message) {
-                    $final = "salut";
-                    return $message;
-                } 
-                else {
-                    return 'An Error Occurred While Sending The Email';
-                }
+                return $token;
         } 
         else{
-            return 'We Couldn\'t Find You In Our Database. Maybe Wrong Email/Password Combination';
+            return 'Wrong Email/Password';
         }
     }
 

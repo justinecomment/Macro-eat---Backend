@@ -6,7 +6,9 @@
     header("Access-Control-Allow-Headers: Origin, X-Requested-With, Content-Type, Accept, Authorization");
 
     include_once('login.php');
-    require_once('db.php');
+    require('db.php');
+    include_once('validation.php');
+
 
 
     if ($_SERVER['REQUEST_METHOD'] == 'POST') {
@@ -35,34 +37,17 @@
 
 
     if ($_SERVER['REQUEST_METHOD'] == 'GET') {
-        $connection = new PDO("mysql:host=$HOST;dbname=$DBNAME", $USER, $PASS);
-        
-        $username = $_GET['username'];
-        $password = $_GET['password'];
-       
+        if(ISSET($_GET['username']) && ISSET($_GET['password'])){
+            $username = $_GET['username'];
+            $password = $_GET['password'];
 
-        $sql = $connection->query("SELECT username, password FROM login WHERE username = '$username' && `password`= '$password';");
-        while ($result = $sql->fetch()){
-            $data = array('username' => $result['username'],
-                          'password' => $result['password']);
-        }
-
-        try{
-            if($data['username'] != $username && $data['password'] != $password){
-                throw new Exception('Login incorrect', 500);
-            }
-            else{
-                session_start();
-                $_SESSION['username'] = $username;
-                $_SESSION['password'] = $password;
-                header('Location: http://localhost/macroeat/accueil.php');
-            }
-        }
-        catch(Exception $e){
-            header("HTTP/1.1 500 Internal Server Error");
-            echo 'error: '.$e->getMessage();
+            // Check JWT
+            $auth = new userAuth();
+            echo $auth->mailUser($username, $password);
         }
 
     }
+
+
 
 ?>
