@@ -43,7 +43,15 @@
 
             // Check JWT
             $auth = new userAuth();
-            echo $auth->mailUser($username, $password);
+            $token = $auth->mailUser($username, $password);
+            echo $token;
+
+            if ($auth->validMail($token)){
+                return;
+            }
+            else{
+                echo "Email non valid";
+            }
         }
 
     }

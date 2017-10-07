@@ -2,28 +2,29 @@
 
     use \Firebase\JWT\JWT;
     require_once('JWT.php');
-    
+    require_once('login.php');
     require_once 'vendor/autoload.php';
     
 class userAuth {
-    private $id;
-    private $email;
+    private $password;
+    private $username;
     private $key = "secretSignKey";
 
+
     // Checks if the user exists in the database
-    private function validUser($email, $password) {
+    private function validUser($usernameInput, $passwordInput) {
         $connection = new PDO("mysql:host=localhost;dbname=macroeat",'justine','admin');
 
-        $username = $_GET['username'];
-        $password = $_GET['password'];
-
-        $sql = $connection->query("SELECT username, password FROM login WHERE username = '$username' && `password`= '$password';");
+        $sql = $connection->query("SELECT username, password FROM login WHERE username = '$usernameInput' && `password`= '$passwordInput';");
         while ($result = $sql->fetch()){
             $data = array('username' => $result['username'],
                           'password' => $result['password']);
         }
 
-        if($data['username'] == $username && $data['password'] == $password){
+        $this->username = $usernameInput;
+        $this->password = $passwordInput;
+
+        if($data['username'] == $this->username && $data['password'] == $this->password){
             return true;
         }
         else{
@@ -34,24 +35,12 @@ class userAuth {
     // Generates and signs a JWT for User
     private function genJWT() {
         $payload = array(
-            "id" => $this->id,
-            "email" => $this->email,
+            "username" => $this->username,
             "exp" => time() + (60 * 60)
         );
         return JWT::encode($payload, $this->key);
     }
 
-    // sends signed token in email to user if the user exists
-    public function mailUser($email, $password) {
-        // check if the user exists
-        if ($this->validUser($email, $password)) {
-                $token = $this->genJWT();
-                return $token;
-        } 
-        else{
-            return 'Wrong Email/Password';
-        }
-    }
 
     // Validates a given JWT from the user email
     private function validJWT($token) {
@@ -67,20 +56,33 @@ class userAuth {
         $res['1'] = (array) $decoded;
         return $res;
     }
- 
+
+
+     // sends signed token in email to user if the user exists
+    public function mailUser($username, $password) {
+        // check if the user exists
+        if ($this->validUser($username, $password)) {
+                $token = $this->genJWT();
+                return $token;
+        } 
+        else{
+            return 'Wrong Email/Password';
+        }
+    }
+
  
     public function validMail($token) {
         // checks if an email is valid
         $tokenVal = $this->validJWT($token);
     
-        // check if the first array value is true
         if ($tokenVal['0']) {
-            return "Everything went well, time to serve you what you need.";
+            return true;
         } 
         else{
-            return "There was an error validating your email. Send another link";
+            return false;
         }
     }
+
 }
 
 ?>
